@@ -33,18 +33,12 @@ public class LogTest {
     @Test
     public void getURLByTime() throws Exception {
         Log.GetCollection();
-        List<String> list = Log.GetURL("193.0.0.0");
+        List<String> list = Log.GetURL("2017/11/01 20:17:43","2017/11/01 21:15:00");
         List<String> test = new ArrayList<>();
-        test.add("http://www.aaa.com.ua/");
-        test.add("http://www.aaa.com.ua/");
-        test.add("http://www.pravda.com.ua/");
+        test.add("https://uk.wikipedia.org/");
         assertEquals(list.equals(test), true);
     }
 
-    @Test
-    public void readCSV() throws Exception{
-        //List<Log> logs = Log.ReadCSV("data.csv");
-    }
 
     @Test
     public void insertDocument(){
@@ -54,5 +48,25 @@ public class LogTest {
         Document doc = Log.logsCollection.find(and(eq("url","www/dynamo"),eq("ip","164.0.0.12"))).first();
         assertEquals(doc.isEmpty(),false);
     }
+
+    @Test
+    public void updateDocument(){
+        Log.GetCollection();
+        Log log = new Log("http://dynamo.kiev.ua/","164.0.0.12","2017/11/02 15:32:00","2017/11/02 15:35:00");
+        log.UpdateDocument("www/dynamo");
+        Document doc = Log.logsCollection.find(and(eq("url","http://dynamo.kiev.ua/"),eq("ip","164.0.0.12"))).first();
+        assertEquals(doc.isEmpty(),false);
+    }
+
+    @Test
+    public void deleteDocument() {
+        Log.GetCollection();
+        Log log = new Log("http://kkkk.kiev.ua/","164.0.0.12","2017/11/02 15:32:00","2017/11/02 15:35:00");
+        log.InsertDocument();
+        log.DeleteDocument();
+        Document doc = Log.logsCollection.find(and(eq("url","http://kkkk.kiev.ua/"),eq("ip","164.0.0.12"))).first();
+        assertEquals(doc,null);
+    }
+
 
 }

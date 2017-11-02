@@ -15,6 +15,8 @@ import java.io.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+
+
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -29,19 +31,12 @@ import static com.mongodb.client.model.Updates.*;
 import com.mongodb.client.result.UpdateResult;
 
 public class Log {
-    public  String url;
-    public  String ip;
+    public String url;
+    public String ip;
     public String timeStamp;
     public String timeSpent;
 
     public static MongoCollection<Document> logsCollection;
-    public static HashMap<String,Log> logsMap;
-    public static Block<Document> printBlock = new Block<Document>() {
-        @Override
-        public void apply(final Document document) {
-            System.out.println(document.toJson());
-        }
-    };
 
     public Log(String url,String ip,String timeStamp,String timeSpent){
         this.url = url;
@@ -49,10 +44,34 @@ public class Log {
         this.timeStamp = timeStamp;
         this.timeSpent = timeSpent;
     }
-    @Override public String toString() {
+    @Override
+    public final int hashCode(){
+        int hash = 0;
+        hash += url.hashCode();
+        hash += ip.hashCode();
+        hash *= timeSpent.hashCode();
+        hash -= timeStamp.hashCode();
+        return hash;
+    }
+    @Override
+    public final boolean equals(Object obj){
+        if (obj instanceof Log)
+        {
+            if (obj == null)
+            {return false;}
+
+            if (this == obj)
+            {return true;}
+
+            if (this.hashCode() == obj.hashCode())
+            {return true;}
+        }
+        return false;
+    }
+    @Override
+    public String toString() {
         return "Log [url=" + this.url + ", ip=" + this.ip + ", timeStamp=" + this.timeStamp + ", timeSpent=" + this.timeSpent+ "]";
     }
-
 
 
     public static void GetCollection(){
@@ -91,11 +110,12 @@ public class Log {
         }
     }
     public void DeleteDocument(){
-        logsCollection.deleteOne(eq("url", this.url));
+        Document doc = logsCollection.find(and(eq("url", this.url),eq("ip",this.ip))).first();
+        if(!doc.isEmpty()) {
+            logsCollection.deleteOne(doc);
+        }
     }
-    public static long GetCountOfDocument(){
-        return logsCollection.count();
-    }
+
     public static List<String> GetIp(String url){
         List<String> listIP = new ArrayList<>();
         FindIterable<Document> coll = logsCollection.find(eq("url", url)).sort(Sorts.ascending("ip"));
@@ -105,23 +125,26 @@ public class Log {
         }
         return  listIP;
     }
-    public static void GetURL(String timeStamp,String timeSpent){
+    public static List<String> GetURL(String timeStamp,String timeSpent){
         SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        List<String> listURL = new ArrayList<>();
         try {
             Date date1 = format.parse(timeStamp);
             Date date2 = format.parse(timeSpent);
-            //logsCollection.find(and(gte("timeStamp", timeStamp), lt("timeSpent", timeSpent)))
-              //      .sort(Sorts.descending("url")).forEach(printBlock);
             FindIterable<Document> coll = logsCollection.find(and(gte("timeStamp", date1), lt("timeSpent", date2)));
             for(Document doc : coll){
                 System.out.println("URL: " + doc.getString("url"));
+                listURL.add(doc.getString("url"));
             }
         } catch (ParseException e) {
              e.printStackTrace();
         }
+        finally {
+            return listURL;
+        }
+
     }
     public static List<String> GetURL(String ip){
-        //logsCollection.find(eq("ip", ip)).sort(Sorts.ascending("url")).forEach(printBlock);
         List<String> listURL = new ArrayList<>();
         FindIterable<Document> coll = logsCollection.find(eq("ip", ip)).sort(Sorts.ascending("url"));
         for(Document doc : coll){
@@ -130,47 +153,32 @@ public class Log {
         }
         return listURL;
     }
-    public static void GetDate(){
-        Document doc = logsCollection.find().first();
-        Date date = doc.getDate("timeStamp");
-        SimpleDateFormat formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-        formattedDate.setTimeZone(TimeZone.getTimeZone("GMT+02:00"));
-        System.out.println(formattedDate.format(date));
-    }
 
+
+    public static List<String> MapReduceURLByTime(){
+        String map ="function () {"+
+                "emit('url', {count:1});"+
+                "}";
+        String reduce = "function (key, values) { "+
+                " total = 0; "+
+                " for (var i in values) { "+
+                " total += values[i].count; "+
+                " } "+
+                " return {count:total} }";
+
+        
+        return null;
+
+    }
 
 
     public static void main( String args[] ) throws FileNotFoundException, UnsupportedEncodingException {
 
         GetCollection();
 
-        ReadCSV.ConvertFromCSVToJSON("data.txt");
-        //InsertDocument("http://www.aaa.com.ua/","127.0.0.0","2017/11/01 21:12:00","2017/11/01 21:15:00");
-        //UpdateDocument("http://www.pravda.com.ua/","https://stackoverflow.com/","127.0.0.0","2017/11/01 21:12:00","2017/11/01 21:15:00");
-        //DeleteDocument("http://www.pravda.com.ua/");
-        //Log log1 = new Log("http://www.pravda.com.ua/","127.0.0.0",);
-        //log1.InsertDocument();
+        //ReadCSV.ConvertFromCSVToJSON("data.txt");
 
-       // log1.UpdateDocument("John");
-        //log1.DeleteDocument("Bogdan");
-        //Document myDoc = logsCollection.find().first();
-        //System.out.println(myDoc.toJson());
-
-        //Get
-        //GetIp("https://stackoverflow.com/");
-        //GetURL("127.0.0.0");
-       // GetURL("2017/11/01 21:12:00","2017/11/01 21:15:00");
         //GetDate();
-        //List<String> listIP = GetIp("http://www.pravda.com.ua/");
-        //MongoCursor<Document> cursor = logsCollection.find().iterator();
-        //try {
-          //  while (cursor.hasNext()) {
-           //     System.out.println(cursor.next().toJson());
-          //  }
-      //  } finally {
-         //   cursor.close();
-        //}
 
-        //System.out.println("Count of document in collection: "+GetCountOfDocument());
     }
 }

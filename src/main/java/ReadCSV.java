@@ -47,25 +47,19 @@ public class ReadCSV {
         return new Log(url,ip,timeStamp,timeSpent);
     }
 
-    public static void ConvertFromCSVToJSON(String fileName){
+    public static String ConvertFromCSVToJSON(String fileName){
         List<Log> logs = ReadCSV.readFromCSV("data.txt");
+        String jsonInString = "";
         try{
             ObjectMapper mapper = new ObjectMapper();
             mapper.writeValue(new File("file.json"),logs);
+            jsonInString = mapper.writeValueAsString(logs);
         }
         catch (IOException ioex){
             ioex.printStackTrace();
         }
-    }
-    public static void ConvertFromJSONToArray(){
-        ObjectMapper mapper = new ObjectMapper();
-
-        //JSON from file to Object
-        try {
-            Log[] logs = mapper.readValue(new File("file.json"), Log[].class);
-        }
-        catch (IOException ioex){
-            ioex.printStackTrace();
+        finally {
+            return jsonInString;
         }
     }
 
