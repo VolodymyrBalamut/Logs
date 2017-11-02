@@ -164,26 +164,7 @@ public class Log {
                 null, MapReduceCommand.OutputType.INLINE, null);
 
         MapReduceOutput out = collection.mapReduce(cmd);
-
-        for (DBObject o : out.results()) {
-            System.out.println(o.toString());
-            Map omap = o.toMap();
-            String url ="";
-            String total = "";
-            boolean flag = false;
-            for (Object key : omap.keySet()) {
-                if(!flag){
-                    url = omap.get(key).toString();
-                }
-                else{
-                    total = omap.get(key).toString();
-                }
-                flag = true;
-            }
-            dictionary.put(url,total);
-        }
-        System.out.println("Done");
-
+        dictionary = ConvertToDictionary(out);
         return dictionary;
     }
 
@@ -199,28 +180,43 @@ public class Log {
                 null, MapReduceCommand.OutputType.INLINE, null);
 
         MapReduceOutput out = collection.mapReduce(cmd);
-
-        for (DBObject o : out.results()) {
-            System.out.println(o.toString());
-            Map omap = o.toMap();
-            String url ="";
-            String total = "";
-            boolean flag = false;
-            for (Object key : omap.keySet()) {
-                if(!flag){
-                     url = omap.get(key).toString();
-                }
-                else{
-                    total = omap.get(key).toString();
-                }
-                flag = true;
-            }
-            dictionary.put(url,total);
-        }
-        System.out.println("Done");
-
+        dictionary = ConvertToDictionary(out);
         return dictionary;
     }
+    public static HashMap<String,String> MapReduceURLByURLAndDay(){
+        DBCollection collection = ConnectForMapReduce();
+        HashMap<String,String> dictionary = new HashMap<>();
+        String map ="function () { var count =1;"+
+                "var day = (this.timeStamp.getFullYear() + \"-\" + (this.timeStamp.getMonth()+1) + \"-\" +this.timeStamp.getDate());"+
+                //"var day = 1;"+
+                "emit({day:day,url:this.url},count); }";
+        String reduce = "function (key, count) { var total =0;"
+                + "for(var i =0; i<count.length;i++){"
+                +"total = total + 1; } "
+                + "return total; }";
+        MapReduceCommand cmd = new MapReduceCommand(collection, map, reduce,
+                null, MapReduceCommand.OutputType.INLINE, null);
+
+        MapReduceOutput out = collection.mapReduce(cmd);
+        dictionary = ConvertToDictionary(out);
+        return dictionary;
+    }
+    public static HashMap<String,String> MapReduceIPByCountTimeSpent(){
+        DBCollection collection = ConnectForMapReduce();
+        HashMap<String,String> dictionary = new HashMap<>();
+        String map ="function () { var count =1; emit(this.ip,{count:count,timeSpent:this.timeSpent}); }";
+        String reduce = "function (key, values) { var total =0; var timeSpentTotal =0;"
+                + "for(var i =0; i<values.length;i++){"
+                +"total = total + 1; timeSpentTotal = timeSpentTotal + values[i].timeSpent; } "
+                + "return {total,timeSpentTotal}; }";
+        MapReduceCommand cmd = new MapReduceCommand(collection, map, reduce,
+                null, MapReduceCommand.OutputType.INLINE, null);
+
+        MapReduceOutput out = collection.mapReduce(cmd);
+        dictionary = ConvertToDictionary(out);
+        return dictionary;
+    }
+
 
     private static DBCollection ConnectForMapReduce(){
         MongoClient mongo = null;
@@ -234,7 +230,7 @@ public class Log {
         return collection;
     }
 
-    private static HashMap<String,String>  ConvertToMap(MapReduceOutput out){
+    private static HashMap<String,String>  ConvertToDictionary(MapReduceOutput out){
         HashMap<String,String> dictionary =new HashMap<>();
         for (DBObject o : out.results()) {
             System.out.println(o.toString());
@@ -264,6 +260,8 @@ public class Log {
         //ReadCSV.ConvertFromCSVToJSON("data.txt");
         HashMap<String,String> dict = MapReduceURLByTime();
         HashMap<String,String> dict2 = MapReduceURLByCount();
+        HashMap<String,String> dict3 = MapReduceURLByURLAndDay();
+        HashMap<String,String> dict4 = MapReduceIPByCountTimeSpent();
         int i =0;
         //GetDate();
 
