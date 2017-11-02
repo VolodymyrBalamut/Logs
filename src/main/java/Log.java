@@ -5,7 +5,6 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
 
-
 import com.mongodb.client.model.Sorts;
 import org.bson.Document;
 
@@ -152,18 +151,15 @@ public class Log {
     }
 
 
-    public static List<String> MapReduceURLByTime(){
-        MongoClient mongo = null;
-        try {
-            mongo = new MongoClient("localhost", 27017);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        DB db = mongo.getDB("log");
-        DBCollection collection = db.getCollection("logs");
-        String map ="function () { emit('url','timeSpent'); }";
-        String reduce = "function (key, values) { return Array.sum(values); }";
+    public static HashMap<String,String> MapReduceURLByTime(){
+        DBCollection collection = ConnectForMapReduce();
+        HashMap<String,String> dictionary = new HashMap<>();
+
+        String map ="function () { emit(this.url,this.timeSpent); }";
+        String reduce = "function (key, timeSpent) { var total =0;"
+                + "for(var i =0; i<timeSpent.length;i++){"
+                +"total = total +timeSpent[i]; } "
+                + "return total; }";
         MapReduceCommand cmd = new MapReduceCommand(collection, map, reduce,
                 null, MapReduceCommand.OutputType.INLINE, null);
 
@@ -171,20 +167,104 @@ public class Log {
 
         for (DBObject o : out.results()) {
             System.out.println(o.toString());
+            Map omap = o.toMap();
+            String url ="";
+            String total = "";
+            boolean flag = false;
+            for (Object key : omap.keySet()) {
+                if(!flag){
+                    url = omap.get(key).toString();
+                }
+                else{
+                    total = omap.get(key).toString();
+                }
+                flag = true;
+            }
+            dictionary.put(url,total);
         }
         System.out.println("Done");
 
-        return null;
-
+        return dictionary;
     }
 
+    public static HashMap<String,String> MapReduceURLByCount(){
+        DBCollection collection = ConnectForMapReduce();
+        HashMap<String,String> dictionary = new HashMap<>();
+        String map ="function () { var count =1; emit(this.url,count); }";
+        String reduce = "function (key, count) { var total =0;"
+                + "for(var i =0; i<count.length;i++){"
+                +"total = total + 1; } "
+                + "return total; }";
+        MapReduceCommand cmd = new MapReduceCommand(collection, map, reduce,
+                null, MapReduceCommand.OutputType.INLINE, null);
 
+        MapReduceOutput out = collection.mapReduce(cmd);
+
+        for (DBObject o : out.results()) {
+            System.out.println(o.toString());
+            Map omap = o.toMap();
+            String url ="";
+            String total = "";
+            boolean flag = false;
+            for (Object key : omap.keySet()) {
+                if(!flag){
+                     url = omap.get(key).toString();
+                }
+                else{
+                    total = omap.get(key).toString();
+                }
+                flag = true;
+            }
+            dictionary.put(url,total);
+        }
+        System.out.println("Done");
+
+        return dictionary;
+    }
+
+    private static DBCollection ConnectForMapReduce(){
+        MongoClient mongo = null;
+        try {
+            mongo = new MongoClient("localhost", 27017);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        DB db = mongo.getDB("log");
+        DBCollection collection = db.getCollection("logs");
+        return collection;
+    }
+
+    private static HashMap<String,String>  ConvertToMap(MapReduceOutput out){
+        HashMap<String,String> dictionary =new HashMap<>();
+        for (DBObject o : out.results()) {
+            System.out.println(o.toString());
+            Map omap = o.toMap();
+            String url ="";
+            String total = "";
+            boolean flag = false;
+            for (Object key : omap.keySet()) {
+                if(!flag){
+                    url = omap.get(key).toString();
+                }
+                else{
+                    total = omap.get(key).toString();
+                }
+                flag = true;
+            }
+            dictionary.put(url,total);
+        }
+
+        System.out.println("Done");
+        return dictionary;
+    }
     public static void main( String args[] ) throws FileNotFoundException, UnsupportedEncodingException {
 
         //GetCollection();
 
         //ReadCSV.ConvertFromCSVToJSON("data.txt");
-        MapReduceURLByTime();
+        HashMap<String,String> dict = MapReduceURLByTime();
+        HashMap<String,String> dict2 = MapReduceURLByCount();
+        int i =0;
         //GetDate();
 
     }
