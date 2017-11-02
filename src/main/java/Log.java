@@ -11,9 +11,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Sorts;
 import org.bson.Document;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -33,8 +31,8 @@ import com.mongodb.client.result.UpdateResult;
 public class Log {
     public  String url;
     public  String ip;
-    private String timeStamp;
-    private String timeSpent;
+    public String timeStamp;
+    public String timeSpent;
 
     public static MongoCollection<Document> logsCollection;
     public static HashMap<String,Log> logsMap;
@@ -51,22 +49,11 @@ public class Log {
         this.timeStamp = timeStamp;
         this.timeSpent = timeSpent;
     }
-    public void ReadCSV(String fileName){
-        Pattern pattern = Pattern.compile(",");
-        try (BufferedReader in = new BufferedReader(new FileReader(fileName))) {
-            List <Log> logs = in.lines().skip(1).map(line -> {
-                String[] x = pattern.split(line);
-                return new Log(x[0],x[1],x[2],x[3]);
-            }).collect(Collectors.toList());
-
-            ObjectMapper mapper = new ObjectMapper();
-            //mapper.enable(SerializationFeature.INDENT_OUTPUT);
-            mapper.writeValue(System.out, logs);
-        }
-        catch (IOException ioex){
-            ioex.printStackTrace();
-        }
+    @Override public String toString() {
+        return "Log [url=" + this.url + ", ip=" + this.ip + ", timeStamp=" + this.timeStamp + ", timeSpent=" + this.timeSpent+ "]";
     }
+
+
 
     public static void GetCollection(){
         MongoClient mongoClient = new MongoClient( "localhost" , 27017 );
@@ -75,13 +62,13 @@ public class Log {
         logsCollection = collection;
     }
 
-    public static void InsertDocument(String url,String ip,String timeStamp,String timeSpent){
+    public void InsertDocument(){
         DateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         try {
-            Date date1 = format.parse(timeStamp);
-            Date date2 = format.parse(timeSpent);
-            Document doc = new Document("url", url)
-                    .append("ip", ip)
+            Date date1 = format.parse(this.timeStamp);
+            Date date2 = format.parse(this.timeSpent);
+            Document doc = new Document("url", this.url)
+                    .append("ip", this.ip)
                     .append("timeStamp",date1)
                     .append("timeSpent",date2);
             logsCollection.insertOne(doc);
@@ -89,13 +76,13 @@ public class Log {
             e.printStackTrace();
         }
     }
-    public static void UpdateDocument(String urlOld,String url,String ip,String timeStamp,String timeSpent){
+    public void UpdateDocument(String urlOld){
         DateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         try{
-            Date date1 = format.parse(timeStamp);
-            Date date2 = format.parse(timeSpent);
-            Document doc = new Document("url", url)
-                    .append("ip", ip)
+            Date date1 = format.parse(this.timeStamp);
+            Date date2 = format.parse(this.timeSpent);
+            Document doc = new Document("url", this.url)
+                    .append("ip", this.ip)
                     .append("timeStamp",date1)
                     .append("timeSpent",date2);
             logsCollection.updateOne(eq("url", urlOld), new Document("$set", doc));
@@ -103,8 +90,8 @@ public class Log {
             e.printStackTrace();
         }
     }
-    public static void DeleteDocument(String url){
-        logsCollection.deleteOne(eq("url", url));
+    public void DeleteDocument(){
+        logsCollection.deleteOne(eq("url", this.url));
     }
     public static long GetCountOfDocument(){
         return logsCollection.count();
@@ -153,9 +140,11 @@ public class Log {
 
 
 
-    public static void main( String args[] ) {
+    public static void main( String args[] ) throws FileNotFoundException, UnsupportedEncodingException {
 
         GetCollection();
+
+        ReadCSV.ConvertFromCSVToJSON("data.txt");
         //InsertDocument("http://www.aaa.com.ua/","127.0.0.0","2017/11/01 21:12:00","2017/11/01 21:15:00");
         //UpdateDocument("http://www.pravda.com.ua/","https://stackoverflow.com/","127.0.0.0","2017/11/01 21:12:00","2017/11/01 21:15:00");
         //DeleteDocument("http://www.pravda.com.ua/");
@@ -172,7 +161,7 @@ public class Log {
         //GetURL("127.0.0.0");
        // GetURL("2017/11/01 21:12:00","2017/11/01 21:15:00");
         //GetDate();
-        List<String> listIP = GetIp("http://www.pravda.com.ua/");
+        //List<String> listIP = GetIp("http://www.pravda.com.ua/");
         //MongoCursor<Document> cursor = logsCollection.find().iterator();
         //try {
           //  while (cursor.hasNext()) {
