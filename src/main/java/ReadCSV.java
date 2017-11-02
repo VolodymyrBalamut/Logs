@@ -44,7 +44,7 @@ public class ReadCSV {
         String timeStamp = metadata[2];
         String timeSpent = metadata[3];
         // create and return book of this metadata
-        return new Log(url,ip,timeStamp,timeSpent);
+        return new Log(url,ip,timeStamp,Integer.parseInt(timeSpent));
     }
 
     public static String ConvertFromCSVToJSON(String fileName){

@@ -1,7 +1,5 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
-import com.mongodb.ServerAddress;
+import com.mongodb.*;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoDatabase;
@@ -12,6 +10,7 @@ import com.mongodb.client.model.Sorts;
 import org.bson.Document;
 
 import java.io.*;
+import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,8 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.mongodb.Block;
 
 import com.mongodb.client.MongoCursor;
 import static com.mongodb.client.model.Filters.*;
@@ -34,11 +31,11 @@ public class Log {
     public String url;
     public String ip;
     public String timeStamp;
-    public String timeSpent;
+    public Integer timeSpent;
 
     public static MongoCollection<Document> logsCollection;
 
-    public Log(String url,String ip,String timeStamp,String timeSpent){
+    public Log(String url,String ip,String timeStamp,int timeSpent){
         this.url = url;
         this.ip = ip;
         this.timeStamp = timeStamp;
@@ -49,7 +46,7 @@ public class Log {
         int hash = 0;
         hash += url.hashCode();
         hash += ip.hashCode();
-        hash *= timeSpent.hashCode();
+        hash *= timeSpent;
         hash -= timeStamp.hashCode();
         return hash;
     }
@@ -85,11 +82,11 @@ public class Log {
         DateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         try {
             Date date1 = format.parse(this.timeStamp);
-            Date date2 = format.parse(this.timeSpent);
+            //Date date2 = format.parse(this.timeSpent);
             Document doc = new Document("url", this.url)
                     .append("ip", this.ip)
                     .append("timeStamp",date1)
-                    .append("timeSpent",date2);
+                    .append("timeSpent",this.timeSpent);
             logsCollection.insertOne(doc);
         } catch (ParseException e) {
             e.printStackTrace();
@@ -99,11 +96,11 @@ public class Log {
         DateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         try{
             Date date1 = format.parse(this.timeStamp);
-            Date date2 = format.parse(this.timeSpent);
+            //Date date2 = format.parse(this.timeSpent);
             Document doc = new Document("url", this.url)
                     .append("ip", this.ip)
                     .append("timeStamp",date1)
-                    .append("timeSpent",date2);
+                    .append("timeSpent",this.timeSpent);
             logsCollection.updateOne(eq("url", urlOld), new Document("$set", doc));
         }catch (ParseException e) {
             e.printStackTrace();
@@ -125,13 +122,13 @@ public class Log {
         }
         return  listIP;
     }
-    public static List<String> GetURL(String timeStamp,String timeSpent){
+    public static List<String> GetURL(String timeStart,String timeEnd){
         SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         List<String> listURL = new ArrayList<>();
         try {
-            Date date1 = format.parse(timeStamp);
-            Date date2 = format.parse(timeSpent);
-            FindIterable<Document> coll = logsCollection.find(and(gte("timeStamp", date1), lt("timeSpent", date2)));
+            Date date1 = format.parse(timeStart);
+            Date date2 = format.parse(timeEnd);
+            FindIterable<Document> coll = logsCollection.find(and(gte("timeStamp", date1), lt("timeStamp", date2)));
             for(Document doc : coll){
                 System.out.println("URL: " + doc.getString("url"));
                 listURL.add(doc.getString("url"));
@@ -156,17 +153,27 @@ public class Log {
 
 
     public static List<String> MapReduceURLByTime(){
-        String map ="function () {"+
-                "emit('url', {count:1});"+
-                "}";
-        String reduce = "function (key, values) { "+
-                " total = 0; "+
-                " for (var i in values) { "+
-                " total += values[i].count; "+
-                " } "+
-                " return {count:total} }";
+        MongoClient mongo = null;
+        try {
+            mongo = new MongoClient("localhost", 27017);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        DB db = mongo.getDB("log");
+        DBCollection collection = db.getCollection("logs");
+        String map ="function () { emit('url','timeSpent'); }";
+        String reduce = "function (key, values) { return Array.sum(values); }";
+        MapReduceCommand cmd = new MapReduceCommand(collection, map, reduce,
+                null, MapReduceCommand.OutputType.INLINE, null);
 
-        
+        MapReduceOutput out = collection.mapReduce(cmd);
+
+        for (DBObject o : out.results()) {
+            System.out.println(o.toString());
+        }
+        System.out.println("Done");
+
         return null;
 
     }
@@ -174,10 +181,10 @@ public class Log {
 
     public static void main( String args[] ) throws FileNotFoundException, UnsupportedEncodingException {
 
-        GetCollection();
+        //GetCollection();
 
         //ReadCSV.ConvertFromCSVToJSON("data.txt");
-
+        MapReduceURLByTime();
         //GetDate();
 
     }
