@@ -1,3 +1,7 @@
+package mylogstest;
+
+import mylogs.Log;
+import mylogs.ReadCSV;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,7 +21,7 @@ public class ReadCSVTest {
 
     @Test
     public void convertFromCSVToJSON() throws Exception {
-        String strJSON = ReadCSV.ConvertFromCSVToJSON("data.txt");
+        String strJSON = ReadCSV.convertFromCSVToJSON("data.txt");
         String test = "[{\"url\":\"http://www.bbb.com.ua/\",\"ip\":\"127.0.0.0\",\"timeStamp\":\"2017/11/01 21:12:00\",\"timeSpent\":100},{\"url\":\"http://www.ccc.com.ua/\",\"ip\":\"128.0.0.3\",\"timeStamp\":\"2017/11/02 16:12:00\",\"timeSpent\":200}]";
         assertEquals(strJSON.equals(test),true);
     }

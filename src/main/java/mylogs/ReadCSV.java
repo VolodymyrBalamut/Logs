@@ -1,10 +1,10 @@
+package mylogs;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.awt.print.Book;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class ReadCSV {
         return new Log(url,ip,timeStamp,Integer.parseInt(timeSpent));
     }
 
-    public static String ConvertFromCSVToJSON(String fileName){
+    public static String convertFromCSVToJSON(String fileName){
         List<Log> logs = ReadCSV.readFromCSV("data.txt");
         String jsonInString = "";
         try{
