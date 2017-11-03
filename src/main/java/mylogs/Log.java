@@ -57,7 +57,7 @@ public class Log {
     }
 
 
-    public static void GetCollection(){
+    public static void getCollection(){
         MongoClient mongoClient = new MongoClient( "localhost" , 27017 );
         MongoDatabase database = mongoClient.getDatabase("log");
         MongoCollection<Document> collection = database.getCollection("logs");
@@ -122,9 +122,7 @@ public class Log {
         } catch (ParseException e) {
              e.printStackTrace();
         }
-        finally {
-            return listURL;
-        }
+        return listURL;
 
     }
     public static List<String> getURL(String ip){
@@ -241,13 +239,9 @@ public class Log {
         return dictionary;
     }
     public static void main( String args[] ) throws FileNotFoundException, UnsupportedEncodingException {
-
-        //GetCollection();
-
-        //mylogs.ReadCSV.convertFromCSVToJSON("data.txt");
-        HashMap<String,String> dict = mapReduceURLByTime();
-        HashMap<String,String> dict2 = mapReduceURLByCount();
-        HashMap<String,String> dict3 = mapReduceURLByURLAndDay();
-        HashMap<String,String> dict4 = mapReduceIPByCountTimeSpent();
+        mapReduceURLByTime();
+        mapReduceURLByCount();
+        mapReduceURLByURLAndDay();
+        mapReduceIPByCountTimeSpent();
     }
 }

@@ -16,7 +16,7 @@ import static org.junit.Assert.*;
 public class LogTest {
     @Test
     public void getIp() throws Exception {
-        Log.GetCollection();
+        Log.getCollection();
         List<String> list = Log.getIp("http://www.pravda.com.ua/");
         List<String> test = new ArrayList<>();
         test.add("127.0.0.0");
@@ -26,7 +26,7 @@ public class LogTest {
 
     @Test
     public void getURL() throws Exception {
-        Log.GetCollection();
+        Log.getCollection();
         List<String> list = Log.getURL("127.0.0.1");
         List<String> test = new ArrayList<>();
         test.add("https://uk.wikipedia.org/");
@@ -35,7 +35,7 @@ public class LogTest {
 
     @Test
     public void getURLByTime() throws Exception {
-        Log.GetCollection();
+        Log.getCollection();
         List<String> list = Log.getURL("2017/11/01 20:17:43","2017/11/01 20:18:00");
         List<String> test = new ArrayList<>();
         test.add("https://uk.wikipedia.org/");
@@ -44,8 +44,8 @@ public class LogTest {
 
 
     @Test
-    public void AinsertDocument(){
-       Log.GetCollection();
+    public void ainsertDocument(){
+       Log.getCollection();
        Log log = new Log("http://kkk.kiev.ua/","164.0.0.12","2017/11/02 15:32:00",100);log.insertDocument();
        log.insertDocument();
        Document doc = Log.logsCollection.find(and(eq("url","http://kkk.kiev.ua/"),eq("ip","164.0.0.12"))).first();
@@ -53,8 +53,8 @@ public class LogTest {
     }
 
     @Test
-    public void BupdateDocument(){
-        Log.GetCollection();
+    public void bupdateDocument(){
+        Log.getCollection();
         Log log = new Log("http://kkkk.kiev.ua/","164.0.0.12","2017/11/02 15:32:00",90);
         log.updateDocument("http://kkk.kiev.ua/");
         Document doc = Log.logsCollection.find(and(eq("url","http://kkkk.kiev.ua/"),eq("ip","164.0.0.12"))).first();
@@ -62,8 +62,8 @@ public class LogTest {
     }
 
     @Test
-    public void CdeleteDocument() {
-        Log.GetCollection();
+    public void cdeleteDocument() {
+        Log.getCollection();
         Log log = new Log("http://kkkk.kiev.ua/","164.0.0.12","2017/11/02 15:32:00",90);
         log.deleteDocument();
         Document doc = Log.logsCollection.find(and(eq("url","http://kkkk.kiev.ua/"),eq("ip","164.0.0.12"))).first();

@@ -58,9 +58,7 @@ public class ReadCSV {
         catch (IOException ioex){
             ioex.printStackTrace();
         }
-        finally {
-            return jsonInString;
-        }
+        return jsonInString;
     }
 
     public static void main( String args[] ){
